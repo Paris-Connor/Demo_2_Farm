@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Acres | Idle Farmer</title>
+    <style>
+        :root {
+            --grass: #7cfc00;
+            --dirt: #8b4513;
+            --soil-rich: #5d2e0a;
+            --ui-bg: #fefae0;
+            --accent: #bc6c25;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #283618;
+            color: #283618;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        #game-container {
+            background: var(--ui-bg);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 0 #606c38;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid var(--accent);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stats { font-weight: bold; font-size: 1.2rem; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .plot {
+            aspect-ratio: 1/1;
+            background-color: var(--dirt);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.1s, background-color 0.3s;
+            border: 4px solid #a0522d;
+        }
+
+        .plot:hover { transform: scale(1.05); }
+        .plot.locked { background-color: #444; cursor: not-allowed; opacity: 0.5; }
+        .plot.locked::after { content: '🔒'; font-size: 1rem; }
+
+        .plot.growing { background-color: var(--soil-rich); }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            right: 5px;
+            height: 6px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #aacc00;
+            width: 0%;
+            border-radius: 3px;
+        }
+
+        .shop {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: rgba(0,0,0,0.05);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .item {
+            background: white;
+            padding: 10px;
+            border: 2px solid var(--accent);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .item:hover { background: #dda15e; color: white; }
+        .item.active { border-color: #283618; background: #ccd5ae; }
+
+        .floating-text {
+            position: absolute;
+            animation: floatUp 1s ease-out forwards;
+            font-weight: bold;
+            color: #2d6a4f;
+            pointer-events: none;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <header>
+            <div class="stats">💰 $<span id="money">20</span></div>
+            <div class="stats">🌾 Seeds: <span id="seed-count">5</span></div>
+        </header>
+
+        <div class="grid" id="farm-grid">
+            </div>
+
+        <div class="shop">
+            <div class="item active" onclick="selectAction('plant')">
+                <strong>Plant Seed</strong><br><small>Uses 1 Seed</small>
+            </div>
+            <div class="item" onclick="buySeeds()">
+                <strong>Buy 5 Seeds</strong><br><small>Cost: $10</small>
+            </div>
+            <div class="item" style="grid-column: span 2;" onclick="expandFarm()">
+                <strong>Expand Land</strong><br><small>Cost: $<span id="expand-cost">50</span></small>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let money = 20;
+        let seeds = 5;
+        let expandCost = 50;
+        let plotsUnlocked = 4;
+        const totalPlots = 12;
+
+        const crops = {
+            empty: { emoji: '', time: 0, value: 0 },
+            sprout: { emoji: '🌱', time: 3 },
+            growing: { emoji: '🌿', time: 6 },
+            ripe: { emoji: '🌽', time: 0, value: 12 }
+        };
+
+        const grid = document.getElementById('farm-grid');
+
+        function initGrid() {
+            grid.innerHTML = '';
+            for (let i = 0; i < totalPlots; i++) {
+                const plot = document.createElement('div');
+                plot.className = `plot ${i >= plotsUnlocked ? 'locked' : ''}`;
+                plot.id = `plot-${i}`;
+                plot.onclick = () => handlePlotClick(i);
+                
+                const bar = document.createElement('div');
+                bar.className = 'progress-bar';
+                const fill = document.createElement('div');
+                fill.className = 'progress-fill';
+                bar.appendChild(fill);
+                plot.appendChild(bar);
+                
+                const emojiSpan = document.createElement('span');
+                emojiSpan.id = `emoji-${i}`;
+                plot.appendChild(emojiSpan);
+
+                grid.appendChild(plot);
+            }
+        }
+
+        function handlePlotClick(index) {
+            const plot = document.getElementById(`plot-${index}`);
+            if (plot.classList.contains('locked')) return;
+            
+            const state = plot.dataset.state;
+
+            // Harvest logic
+            if (state === 'ripe') {
+                money += crops.ripe.value;
+                showFloatText(plot, `+$${crops.ripe.value}`);
+                resetPlot(plot);
+                updateUI();
+                return;
+            }
+
+            // Plant logic
+            if (!state && seeds > 0) {
+                seeds--;
+                startGrowth(plot);
+                updateUI();
+            } else if (!state && seeds <= 0) {
+                alert("Out of seeds! Buy more in the shop.");
+            }
+        }
+
+        function startGrowth(plot) {
+            plot.dataset.state = 'sprout';
+            plot.classList.add('growing');
+            const emoji = plot.querySelector('span');
+            const bar = plot.querySelector('.progress-bar');
+            const fill = plot.querySelector('.progress-fill');
+            
+            emoji.innerText = crops.sprout.emoji;
+            bar.style.display = 'block';
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 2;
+                fill.style.width = progress + '%';
+
+                if (progress === 40) {
+                    emoji.innerText = crops.growing.emoji;
+                    plot.dataset.state = 'growing';
+                }
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    emoji.innerText = crops.ripe.emoji;
+                    plot.dataset.state = 'ripe';
+                    bar.style.display = 'none';
+                    fill.style.width = '0%';
+                }
+            }, 100);
+        }
+
+        function resetPlot(plot) {
+            plot.dataset.state = '';
+            plot.classList.remove('growing');
+            plot.querySelector('span').innerText = '';
+        }
+
+        function buySeeds() {
+            if (money >= 10) {
+                money -= 10;
+                seeds += 5;
+                updateUI();
+            }
+        }
+
+        function expandFarm() {
+            if (money >= expandCost && plotsUnlocked < totalPlots) {
+                money -= expandCost;
+                plotsUnlocked++;
+                expandCost *= 2;
+                initGrid();
+                updateUI();
+            }
+        }
+
+        function showFloatText(el, text) {
+            const span = document.createElement('span');
+            span.className = 'floating-text';
+            span.innerText = text;
+            el.appendChild(span);
+            setTimeout(() => span.remove(), 1000);
+        }
+
+        function updateUI() {
+            document.getElementById('money').innerText = money;
+            document.getElementById('seed-count').innerText = seeds;
+            document.getElementById('expand-cost').innerText = expandCost;
+        }
+
+        initGrid();
+    </script>
+</body>
+</html>
