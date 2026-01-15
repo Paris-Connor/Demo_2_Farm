@@ -1,0 +1,1185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini Farming Game (1-page)</title>
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --panel:#111a2a;
+      --panel2:#0f1524;
+      --ink:#eaf0ff;
+      --muted:#9fb0d0;
+      --accent:#6ae4ff;
+      --good:#b6ff6a;
+      --warn:#ffcf6a;
+      --bad:#ff6a8a;
+      --grid:#22304d;
+      --soil1:#3a2b1c;
+      --soil2:#2f2418;
+      --water:#49b5ff;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: var(--sans);
+      background:
+        radial-gradient(1200px 700px at 20% 0%, #17274a 0%, rgba(23,39,74,0) 60%),
+        radial-gradient(900px 600px at 90% 10%, #1a3a34 0%, rgba(26,58,52,0) 55%),
+        linear-gradient(180deg, var(--bg), #060911);
+      color: var(--ink);
+      overflow-x:hidden;
+    }
+    .wrap{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 18px 14px 28px;
+      display:grid;
+      gap: 14px;
+    }
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap: 12px;
+      padding: 16px;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(17,26,42,.95), rgba(15,21,36,.85));
+      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: var(--shadow);
+    }
+    header h1{
+      margin:0;
+      font-size: clamp(20px, 2.6vw, 30px);
+      letter-spacing:.2px;
+    }
+    header p{
+      margin: 6px 0 0;
+      color: var(--muted);
+      max-width: 72ch;
+      line-height:1.4;
+      font-size: 13.5px;
+    }
+    .pillRow{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 8px;
+      justify-content:flex-end;
+      align-items:center;
+      margin-top: 2px;
+    }
+    .pill{
+      font-family: var(--mono);
+      font-size: 12px;
+      color: rgba(234,240,255,.92);
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      white-space:nowrap;
+      user-select:none;
+    }
+    .pill strong{ color: var(--accent); font-weight:600; }
+
+    .layout{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 14px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .layout{ grid-template-columns: 1fr; }
+      .pillRow{ justify-content:flex-start; }
+    }
+
+    .card{
+      padding: 14px;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(17,26,42,.92), rgba(15,21,36,.86));
+      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: var(--shadow);
+    }
+
+    .toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 10px;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom: 12px;
+    }
+    .tools{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 8px;
+      align-items:center;
+    }
+    button, select{
+      font: inherit;
+      color: var(--ink);
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 12px;
+      padding: 9px 10px;
+      cursor:pointer;
+      user-select:none;
+      transition: transform .06s ease, background .15s ease, border-color .15s ease;
+    }
+    button:hover, select:hover{
+      background: rgba(255,255,255,.09);
+      border-color: rgba(255,255,255,.16);
+    }
+    button:active{ transform: translateY(1px); }
+    button.primary{
+      background: linear-gradient(180deg, rgba(106,228,255,.22), rgba(106,228,255,.10));
+      border-color: rgba(106,228,255,.35);
+    }
+    button.good{
+      background: linear-gradient(180deg, rgba(182,255,106,.20), rgba(182,255,106,.08));
+      border-color: rgba(182,255,106,.35);
+    }
+    button.warn{
+      background: linear-gradient(180deg, rgba(255,207,106,.20), rgba(255,207,106,.08));
+      border-color: rgba(255,207,106,.35);
+    }
+    button.danger{
+      background: linear-gradient(180deg, rgba(255,106,138,.20), rgba(255,106,138,.08));
+      border-color: rgba(255,106,138,.35);
+    }
+
+    .toggle{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 9px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
+    }
+    .toggle input{ transform: translateY(1px); }
+
+    .stats{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 10px;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    .stat{
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      min-width: 160px;
+    }
+    .stat b{ color: var(--accent); font-weight:600; }
+    .stat .ok{ color: var(--good); }
+    .stat .bad{ color: var(--bad); }
+    .stat .warn{ color: var(--warn); }
+
+    .gameRow{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .canvasWrap{
+      position:relative;
+      border-radius: 18px;
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.20);
+    }
+
+    canvas{
+      display:block;
+      width:100%;
+      height:auto;
+      background: linear-gradient(180deg, rgba(72,152,98,.18), rgba(0,0,0,.08));
+    }
+
+    .overlayHint{
+      position:absolute;
+      left: 10px;
+      bottom: 10px;
+      right: 10px;
+      display:flex;
+      flex-wrap:wrap;
+      gap: 8px;
+      align-items:center;
+      justify-content:space-between;
+      pointer-events:none;
+      opacity:.92;
+    }
+    .hintPill{
+      pointer-events:none;
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.22);
+      color: rgba(234,240,255,.92);
+      box-shadow: 0 6px 18px rgba(0,0,0,.25);
+      max-width: 100%;
+    }
+
+    .rightCol{
+      display:grid;
+      gap: 14px;
+      align-content:start;
+    }
+
+    .callout{
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
+    }
+    .callout h3{
+      margin: 0 0 6px;
+      font-size: 14px;
+      letter-spacing:.2px;
+    }
+    .callout p, .callout ul{
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height:1.45;
+    }
+    .callout ul{ padding-left: 18px; }
+
+    .kbd{
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 2px 6px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-bottom-color: rgba(255,255,255,.20);
+      border-radius: 8px;
+      background: rgba(255,255,255,.06);
+      color: rgba(234,240,255,.95);
+      white-space:nowrap;
+    }
+
+    .footer{
+      text-align:center;
+      color: rgba(159,176,208,.85);
+      font-size: 12px;
+      padding: 6px 0 0;
+    }
+
+    /* Small legend icons for tools */
+    .toolIcon{
+      width: 12px; height: 12px; border-radius: 3px;
+      border: 1px solid rgba(255,255,255,.18);
+      display:inline-block;
+      margin-right: 6px;
+      transform: translateY(1px);
+    }
+    .icon-hoe{ background: linear-gradient(180deg, rgba(255,207,106,.5), rgba(255,207,106,.15)); }
+    .icon-seed{ background: linear-gradient(180deg, rgba(182,255,106,.55), rgba(182,255,106,.18)); }
+    .icon-water{ background: linear-gradient(180deg, rgba(73,181,255,.55), rgba(73,181,255,.18)); }
+    .icon-harvest{ background: linear-gradient(180deg, rgba(106,228,255,.45), rgba(106,228,255,.14)); }
+
+    /* Mobile-friendly spacing */
+    @media (max-width: 520px){
+      .stat{ min-width: 140px; }
+      header{ flex-direction:column; }
+      .pillRow{ justify-content:flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Mini Farming Game</h1>
+        <p>
+          Till soil, plant crops, water them, and harvest for coins. Crops grow over time—watering speeds growth.
+          It’s a simple “systems” game: time, resources, and planning.
+        </p>
+      </div>
+      <div class="pillRow">
+        <div class="pill">Grid: <strong>10×8</strong></div>
+        <div class="pill">Day length: <strong>30s</strong></div>
+        <div class="pill">Save: <strong>localStorage</strong></div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <!-- LEFT: game -->
+      <section class="card">
+        <div class="toolbar">
+          <div class="tools">
+            <button class="warn" id="toolTill" title="Till soil (make a plot)"> <span class="toolIcon icon-hoe"></span>Till</button>
+            <button class="good" id="toolPlant" title="Plant a seed on tilled soil"> <span class="toolIcon icon-seed"></span>Plant</button>
+            <button class="primary" id="toolWater" title="Water crops to boost growth"> <span class="toolIcon icon-water"></span>Water</button>
+            <button id="toolHarvest" title="Harvest ripe crops for coins"> <span class="toolIcon icon-harvest"></span>Harvest</button>
+
+            <select id="seedSelect" title="Choose which crop to plant">
+              <option value="turnip">Turnip (cheap, fast)</option>
+              <option value="carrot">Carrot (balanced)</option>
+              <option value="tomato">Tomato (slow, valuable)</option>
+              <option value="corn">Corn (very slow, big payout)</option>
+            </select>
+
+            <label class="toggle" title="Pause growth/time.">
+              <input type="checkbox" id="pauseToggle" />
+              Pause
+            </label>
+          </div>
+
+          <div class="stats">
+            <div class="stat">Day: <b id="dayNum">1</b> • Time: <b id="dayClock">00:00</b></div>
+            <div class="stat">Coins: <b id="coins">20</b> • Water: <b id="water">10</b></div>
+            <div class="stat">Tool: <b id="toolName">Till</b> • Selected: <b id="selectedInfo">—</b></div>
+          </div>
+        </div>
+
+        <div class="gameRow">
+          <div class="canvasWrap">
+            <canvas id="game" width="900" height="680"></canvas>
+            <div class="overlayHint">
+              <div class="hintPill">Click tiles to act • <span class="kbd">1</span> Till <span class="kbd">2</span> Plant <span class="kbd">3</span> Water <span class="kbd">4</span> Harvest</div>
+              <div class="hintPill">Tips: plant in batches • water early • tomatoes/corn pay more</div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button id="saveBtn">Save</button>
+            <button id="loadBtn">Load</button>
+            <button class="danger" id="resetBtn">Reset</button>
+            <button id="shopBtn">Shop: Buy Water (+10)</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: help -->
+      <aside class="rightCol">
+        <section class="card callout">
+          <h3>How it works</h3>
+          <ul>
+            <li><b>Till</b> makes a plot. You can only plant on tilled soil.</li>
+            <li><b>Plant</b> spends coins. Each crop has a grow time + sell value.</li>
+            <li><b>Water</b> spends water. Watered crops grow faster for a bit.</li>
+            <li><b>Harvest</b> only works when crops are ripe.</li>
+          </ul>
+        </section>
+
+        <section class="card callout">
+          <h3>Crop stats</h3>
+          <p id="cropStats"></p>
+        </section>
+
+        <section class="card callout">
+          <h3>Keyboard</h3>
+          <ul>
+            <li><span class="kbd">1</span> Till • <span class="kbd">2</span> Plant • <span class="kbd">3</span> Water • <span class="kbd">4</span> Harvest</li>
+            <li><span class="kbd">S</span> Save • <span class="kbd">L</span> Load • <span class="kbd">P</span> Pause</li>
+          </ul>
+        </section>
+
+        <section class="card callout">
+          <h3>What to try next</h3>
+          <ul>
+            <li>Add seasons/weather that changes growth rates.</li>
+            <li>Add animals that produce items daily.</li>
+            <li>Add quests (harvest 10 carrots, etc.).</li>
+            <li>Add crafting (turn crops into meals for more profit).</li>
+          </ul>
+        </section>
+      </aside>
+    </div>
+
+    <div class="footer">One-file farming game • No libraries • Canvas rendering • Saved in your browser</div>
+  </div>
+
+  <script>
+    // -------------------------
+    // Mini Farming Game (Canvas)
+    // -------------------------
+    // Core loop:
+    // - Grid of tiles
+    // - Tiles can be: grass -> tilled -> planted (growing stages) -> ripe -> harvested (returns to tilled)
+    // - Simple day clock: 30 seconds per day
+    // - Water resource boosts growth temporarily
+
+    // --- Config ---
+    const GRID_W = 10;
+    const GRID_H = 8;
+
+    // Day length (seconds)
+    const DAY_LENGTH = 30;
+
+    // Tile rendering
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    // Fit to device pixel ratio for crispness
+    const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    function applyDPR(){
+      const cssW = canvas.clientWidth || canvas.width;
+      const cssH = canvas.clientHeight || canvas.height;
+      canvas.width = Math.floor(cssW * DPR);
+      canvas.height = Math.floor(cssH * DPR);
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+    }
+    // We'll call once after layout
+    setTimeout(applyDPR, 0);
+    window.addEventListener('resize', applyDPR);
+
+    // Tile size computed from CSS pixels (not device pixels)
+    function tileSize(){
+      const w = canvas.clientWidth || 900;
+      const h = canvas.clientHeight || 680;
+      const pad = 16;
+      const size = Math.floor(Math.min((w - pad*2)/GRID_W, (h - pad*2)/GRID_H));
+      return { size, pad };
+    }
+
+    // Crops definition
+    const CROPS = {
+      turnip: { name: "Turnip", cost: 2, grow: 10, sell: 5, waterBoost: 0.35 },
+      carrot: { name: "Carrot", cost: 4, grow: 16, sell: 10, waterBoost: 0.35 },
+      tomato: { name: "Tomato", cost: 8, grow: 26, sell: 22, waterBoost: 0.40 },
+      corn:   { name: "Corn",   cost: 12, grow: 36, sell: 36, waterBoost: 0.45 },
+    };
+
+    // UI elements
+    const toolBtns = {
+      till: document.getElementById('toolTill'),
+      plant: document.getElementById('toolPlant'),
+      water: document.getElementById('toolWater'),
+      harvest: document.getElementById('toolHarvest'),
+    };
+    const seedSelect = document.getElementById('seedSelect');
+    const pauseToggle = document.getElementById('pauseToggle');
+
+    const dayNumEl = document.getElementById('dayNum');
+    const dayClockEl = document.getElementById('dayClock');
+    const coinsEl = document.getElementById('coins');
+    const waterEl = document.getElementById('water');
+    const toolNameEl = document.getElementById('toolName');
+    const selectedInfoEl = document.getElementById('selectedInfo');
+    const cropStatsEl = document.getElementById('cropStats');
+
+    const saveBtn = document.getElementById('saveBtn');
+    const loadBtn = document.getElementById('loadBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const shopBtn = document.getElementById('shopBtn');
+
+    // --- Game state ---
+    const TILE = {
+      GRASS: 0,
+      TILLED: 1,
+      PLANTED: 2,
+    };
+
+    // Each tile:
+    // { state, cropKey, plantedAt, wateredUntil, growth } growth in seconds progressed
+    let tiles = [];
+    function newTile(){
+      return {
+        state: TILE.GRASS,
+        cropKey: null,
+        growth: 0,
+        wateredUntil: 0,
+        // for visuals:
+        lastActionFlash: 0,
+      };
+    }
+
+    let game = {
+      coins: 20,
+      water: 10,
+      day: 1,
+      dayTime: 0,   // 0..DAY_LENGTH
+      paused: false,
+      tool: 'till', // till|plant|water|harvest
+      selected: null, // {x,y}
+      msg: '',
+      msgT: 0,
+    };
+
+    function initWorld(){
+      tiles = Array.from({length: GRID_H}, () => Array.from({length: GRID_W}, newTile));
+    }
+    initWorld();
+
+    // --- Helpers ---
+    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+    function fmtTime(sec){
+      const s = Math.floor(sec);
+      const mm = String(Math.floor(s/60)).padStart(2,'0');
+      const ss = String(s%60).padStart(2,'0');
+      return `${mm}:${ss}`;
+    }
+    function uiMsg(text, kind=''){
+      game.msg = text;
+      game.msgT = 2.2;
+    }
+
+    function cropStatsText(){
+      const items = Object.entries(CROPS).map(([k,c]) => {
+        return `${c.name}: cost ${c.cost}, grow ${c.grow}s, sell ${c.sell}, water boost ${Math.round(c.waterBoost*100)}%`;
+      });
+      return items.join("<br>");
+    }
+    cropStatsEl.innerHTML = cropStatsText();
+
+    function setTool(t){
+      game.tool = t;
+      toolNameEl.textContent = t[0].toUpperCase() + t.slice(1);
+      // button "active" styling
+      Object.entries(toolBtns).forEach(([k,btn]) => {
+        btn.classList.toggle('primary', k === t);
+      });
+    }
+    setTool('till');
+
+    function getTile(x,y){
+      if (x<0||y<0||x>=GRID_W||y>=GRID_H) return null;
+      return tiles[y][x];
+    }
+
+    function isRipe(tile){
+      if (tile.state !== TILE.PLANTED) return false;
+      const c = CROPS[tile.cropKey];
+      return tile.growth >= c.grow;
+    }
+
+    function growthRatio(tile){
+      if (tile.state !== TILE.PLANTED) return 0;
+      const c = CROPS[tile.cropKey];
+      return clamp(tile.growth / c.grow, 0, 1);
+    }
+
+    function currentWaterBoost(tile, now){
+      if (tile.state !== TILE.PLANTED) return 0;
+      if (now < tile.wateredUntil) return CROPS[tile.cropKey].waterBoost;
+      return 0;
+    }
+
+    // --- Actions ---
+    function actTill(x,y){
+      const t = getTile(x,y);
+      if (!t) return;
+      if (t.state === TILE.GRASS){
+        t.state = TILE.TILLED;
+        t.lastActionFlash = 0.25;
+        uiMsg("Tilled a plot.");
+      } else {
+        uiMsg("That tile is already tilled (or planted).");
+      }
+    }
+
+    function actPlant(x,y){
+      const t = getTile(x,y);
+      if (!t) return;
+      const cropKey = seedSelect.value;
+      const c = CROPS[cropKey];
+
+      if (t.state !== TILE.TILLED){
+        uiMsg("Plant only works on tilled soil.");
+        return;
+      }
+      if (game.coins < c.cost){
+        uiMsg("Not enough coins to buy that seed.");
+        return;
+      }
+
+      game.coins -= c.cost;
+      t.state = TILE.PLANTED;
+      t.cropKey = cropKey;
+      t.growth = 0;
+      t.wateredUntil = 0;
+      t.lastActionFlash = 0.25;
+      uiMsg(`Planted ${c.name}.`);
+    }
+
+    function actWater(x,y){
+      const t = getTile(x,y);
+      if (!t) return;
+      if (t.state !== TILE.PLANTED){
+        uiMsg("Water only helps planted crops.");
+        return;
+      }
+      if (game.water <= 0){
+        uiMsg("You are out of water. Buy more in the shop.");
+        return;
+      }
+
+      // Water grants a temporary boost window
+      const now = performance.now()/1000;
+      game.water -= 1;
+      // extend boost window (max 6s)
+      t.wateredUntil = Math.max(t.wateredUntil, now) + 4.0;
+      t.wateredUntil = Math.min(t.wateredUntil, now + 6.0);
+      t.lastActionFlash = 0.25;
+      uiMsg("Watered crop (temporary growth boost).");
+    }
+
+    function actHarvest(x,y){
+      const t = getTile(x,y);
+      if (!t) return;
+      if (t.state !== TILE.PLANTED){
+        uiMsg("Nothing to harvest here.");
+        return;
+      }
+      if (!isRipe(t)){
+        uiMsg("Not ripe yet. Wait (or water).");
+        return;
+      }
+      const c = CROPS[t.cropKey];
+      game.coins += c.sell;
+      // after harvest, return to tilled soil
+      t.state = TILE.TILLED;
+      t.cropKey = null;
+      t.growth = 0;
+      t.wateredUntil = 0;
+      t.lastActionFlash = 0.25;
+      uiMsg(`Harvested! +${c.sell} coins.`);
+    }
+
+    function actOnTile(x,y){
+      game.selected = {x,y};
+      const t = getTile(x,y);
+      updateSelectedInfo(t);
+
+      if (game.paused) { uiMsg("Game is paused."); return; }
+
+      if (game.tool === 'till') actTill(x,y);
+      else if (game.tool === 'plant') actPlant(x,y);
+      else if (game.tool === 'water') actWater(x,y);
+      else if (game.tool === 'harvest') actHarvest(x,y);
+    }
+
+    function updateSelectedInfo(tile){
+      if (!tile){ selectedInfoEl.textContent = "—"; return; }
+      if (tile.state === TILE.GRASS) selectedInfoEl.textContent = "Grass";
+      else if (tile.state === TILE.TILLED) selectedInfoEl.textContent = "Tilled";
+      else if (tile.state === TILE.PLANTED){
+        const c = CROPS[tile.cropKey];
+        const pct = Math.round(growthRatio(tile)*100);
+        selectedInfoEl.textContent = `${c.name} ${pct}%`;
+      }
+    }
+
+    // --- Input handling ---
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left);
+      const my = (e.clientY - rect.top);
+
+      const { size, pad } = tileSize();
+      const x = Math.floor((mx - pad)/size);
+      const y = Math.floor((my - pad)/size);
+      if (x>=0 && y>=0 && x<GRID_W && y<GRID_H){
+        actOnTile(x,y);
+      }
+    });
+
+    Object.entries(toolBtns).forEach(([k,btn]) => {
+      btn.addEventListener('click', () => setTool(k));
+    });
+
+    pauseToggle.addEventListener('change', () => {
+      game.paused = pauseToggle.checked;
+      uiMsg(game.paused ? "Paused." : "Unpaused.");
+    });
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      const tag = (document.activeElement && document.activeElement.tagName || '').toLowerCase();
+      const typing = (tag === 'input' || tag === 'select' || tag === 'textarea');
+      if (typing) return;
+
+      const k = e.key.toLowerCase();
+      if (k === '1') setTool('till');
+      if (k === '2') setTool('plant');
+      if (k === '3') setTool('water');
+      if (k === '4') setTool('harvest');
+
+      if (k === 'p'){
+        pauseToggle.checked = !pauseToggle.checked;
+        game.paused = pauseToggle.checked;
+        uiMsg(game.paused ? "Paused." : "Unpaused.");
+      }
+      if (k === 's') saveGame();
+      if (k === 'l') loadGame();
+    });
+
+    // --- Save/Load ---
+    const SAVE_KEY = "mini_farm_save_v1";
+
+    function serialize(){
+      // keep it compact
+      return {
+        game: {
+          coins: game.coins,
+          water: game.water,
+          day: game.day,
+          dayTime: game.dayTime,
+          tool: game.tool
+        },
+        tiles: tiles.map(row => row.map(t => ({
+          state: t.state,
+          cropKey: t.cropKey,
+          growth: t.growth,
+          wateredUntil: t.wateredUntil,
+        })))
+      };
+    }
+
+    function deserialize(data){
+      if (!data || !data.tiles || !data.game) return false;
+
+      game.coins = data.game.coins ?? 20;
+      game.water = data.game.water ?? 10;
+      game.day = data.game.day ?? 1;
+      game.dayTime = data.game.dayTime ?? 0;
+      setTool(data.game.tool ?? 'till');
+
+      tiles = data.tiles.map(row => row.map(t => ({
+        state: t.state ?? TILE.GRASS,
+        cropKey: t.cropKey ?? null,
+        growth: t.growth ?? 0,
+        wateredUntil: t.wateredUntil ?? 0,
+        lastActionFlash: 0
+      })));
+
+      // clamp to correct size if needed
+      tiles = tiles.slice(0, GRID_H).map(r => r.slice(0, GRID_W));
+      while (tiles.length < GRID_H) tiles.push(Array.from({length: GRID_W}, newTile));
+      tiles = tiles.map(r => {
+        while (r.length < GRID_W) r.push(newTile());
+        return r;
+      });
+
+      uiMsg("Loaded save.");
+      return true;
+    }
+
+    function saveGame(){
+      try{
+        localStorage.setItem(SAVE_KEY, JSON.stringify(serialize()));
+        uiMsg("Saved!");
+      }catch(err){
+        uiMsg("Save failed (storage blocked).");
+      }
+    }
+    function loadGame(){
+      try{
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw){ uiMsg("No save found."); return; }
+        const data = JSON.parse(raw);
+        if (!deserialize(data)) uiMsg("Save data invalid.");
+      }catch(err){
+        uiMsg("Load failed.");
+      }
+    }
+
+    saveBtn.addEventListener('click', saveGame);
+    loadBtn.addEventListener('click', loadGame);
+
+    resetBtn.addEventListener('click', () => {
+      initWorld();
+      game.coins = 20;
+      game.water = 10;
+      game.day = 1;
+      game.dayTime = 0;
+      game.paused = false;
+      pauseToggle.checked = false;
+      setTool('till');
+      game.selected = null;
+      uiMsg("Reset world.");
+    });
+
+    shopBtn.addEventListener('click', () => {
+      // Simple shop: 10 coins -> +10 water
+      if (game.coins < 10){
+        uiMsg("Need 10 coins to buy water.");
+        return;
+      }
+      game.coins -= 10;
+      game.water += 10;
+      uiMsg("Bought +10 water.");
+    });
+
+    // --- Game loop ---
+    let lastT = performance.now();
+    function tick(){
+      const nowMs = performance.now();
+      const dt = (nowMs - lastT) / 1000;
+      lastT = nowMs;
+
+      if (!game.paused){
+        // Day clock
+        game.dayTime += dt;
+        if (game.dayTime >= DAY_LENGTH){
+          game.dayTime -= DAY_LENGTH;
+          game.day += 1;
+          // daily drip: small water refill
+          game.water += 2;
+          uiMsg(`New day! (+2 water)`);
+        }
+
+        // Crop growth
+        const now = nowMs / 1000;
+        for (let y=0; y<GRID_H; y++){
+          for (let x=0; x<GRID_W; x++){
+            const t = tiles[y][x];
+            if (t.state === TILE.PLANTED){
+              const boost = currentWaterBoost(t, now);
+              const rate = 1 + boost; // base 1x + boost
+              t.growth += dt * rate;
+              // cap at just above grow time for stable ripe check
+              const c = CROPS[t.cropKey];
+              t.growth = Math.min(t.growth, c.grow + 0.5);
+            }
+            if (t.lastActionFlash > 0) t.lastActionFlash = Math.max(0, t.lastActionFlash - dt);
+          }
+        }
+
+        if (game.msgT > 0) game.msgT = Math.max(0, game.msgT - dt);
+      }
+
+      // UI
+      dayNumEl.textContent = game.day;
+      dayClockEl.textContent = fmtTime(game.dayTime);
+      coinsEl.textContent = game.coins;
+      waterEl.textContent = game.water;
+
+      // Update selected info continuously (for growth percent)
+      if (game.selected){
+        const t = getTile(game.selected.x, game.selected.y);
+        updateSelectedInfo(t);
+      }
+
+      render(nowMs/1000);
+      requestAnimationFrame(tick);
+    }
+
+    // --- Rendering ---
+    function render(now){
+      const { size, pad } = tileSize();
+
+      // Canvas cleared in CSS pixels (ctx is scaled by DPR via setTransform)
+      const w = canvas.clientWidth || 900;
+      const h = canvas.clientHeight || 680;
+
+      // soft background
+      ctx.clearRect(0,0,w,h);
+
+      // Sky gradient band
+      ctx.save();
+      ctx.globalAlpha = 1;
+      const sky = ctx.createLinearGradient(0,0,0,h);
+      sky.addColorStop(0, "rgba(106,228,255,0.08)");
+      sky.addColorStop(0.45, "rgba(0,0,0,0)");
+      ctx.fillStyle = sky;
+      ctx.fillRect(0,0,w,h);
+      ctx.restore();
+
+      // Draw field background rectangle
+      roundRect(pad-8, pad-8, size*GRID_W+16, size*GRID_H+16, 18, "rgba(0,0,0,0.22)", "rgba(255,255,255,0.08)");
+
+      // Draw tiles
+      for (let y=0; y<GRID_H; y++){
+        for (let x=0; x<GRID_W; x++){
+          const t = tiles[y][x];
+          const px = pad + x*size;
+          const py = pad + y*size;
+
+          // base grass / soil
+          if (t.state === TILE.GRASS){
+            drawGrass(px, py, size);
+          } else if (t.state === TILE.TILLED){
+            drawSoil(px, py, size, false);
+          } else if (t.state === TILE.PLANTED){
+            drawSoil(px, py, size, true);
+            drawCrop(px, py, size, t, now);
+          }
+
+          // selection outline
+          if (game.selected && game.selected.x === x && game.selected.y === y){
+            ctx.save();
+            ctx.strokeStyle = "rgba(234,240,255,0.8)";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(px+2, py+2, size-4, size-4);
+            ctx.restore();
+          }
+
+          // action flash
+          if (t.lastActionFlash > 0){
+            ctx.save();
+            ctx.globalAlpha = t.lastActionFlash * 0.7;
+            ctx.fillStyle = "rgba(255,255,255,0.22)";
+            ctx.fillRect(px, py, size, size);
+            ctx.restore();
+          }
+        }
+      }
+
+      // Grid lines (subtle)
+      ctx.save();
+      ctx.strokeStyle = "rgba(255,255,255,0.06)";
+      ctx.lineWidth = 1;
+      for (let x=0; x<=GRID_W; x++){
+        const px = pad + x*size;
+        ctx.beginPath();
+        ctx.moveTo(px, pad);
+        ctx.lineTo(px, pad + GRID_H*size);
+        ctx.stroke();
+      }
+      for (let y=0; y<=GRID_H; y++){
+        const py = pad + y*size;
+        ctx.beginPath();
+        ctx.moveTo(pad, py);
+        ctx.lineTo(pad + GRID_W*size, py);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // HUD message
+      if (game.msgT > 0){
+        const alpha = Math.min(1, game.msgT / 0.3);
+        drawToast(game.msg, alpha, w, h);
+      }
+
+      // Corner tip: current seed info
+      drawSeedInfo(w, h);
+    }
+
+    function drawGrass(x,y,s){
+      // checker-ish grass with subtle variation
+      ctx.save();
+      const g = ctx.createLinearGradient(x,y,x,y+s);
+      g.addColorStop(0, "rgba(182,255,106,0.16)");
+      g.addColorStop(1, "rgba(182,255,106,0.06)");
+      ctx.fillStyle = g;
+      ctx.fillRect(x,y,s,s);
+
+      // small blades
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = "rgba(234,240,255,0.18)";
+      for (let i=0;i<6;i++){
+        const bx = x + 6 + Math.random()*(s-12);
+        const by = y + 8 + Math.random()*(s-16);
+        ctx.fillRect(bx, by, 1, 5);
+      }
+      ctx.restore();
+    }
+
+    function drawSoil(x,y,s,planted){
+      ctx.save();
+      // soil base
+      const soil = ctx.createLinearGradient(x,y,x,y+s);
+      soil.addColorStop(0, "rgba(58,43,28,0.75)");
+      soil.addColorStop(1, "rgba(47,36,24,0.75)");
+      ctx.fillStyle = soil;
+      ctx.fillRect(x,y,s,s);
+
+      // furrows
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = "rgba(0,0,0,0.22)";
+      for (let i=0;i<3;i++){
+        const fy = y + (i+1)*s/4;
+        ctx.fillRect(x+4, fy, s-8, 2);
+      }
+
+      // planted soil slightly darker
+      if (planted){
+        ctx.globalAlpha = 0.22;
+        ctx.fillStyle = "rgba(0,0,0,0.30)";
+        ctx.fillRect(x,y,s,s);
+      }
+      ctx.restore();
+    }
+
+    function drawCrop(x,y,s,t,now){
+      const c = CROPS[t.cropKey];
+      const r = growthRatio(t);
+      const ripe = isRipe(t);
+
+      // water sparkle if boosted
+      const boosted = now < t.wateredUntil;
+      if (boosted){
+        ctx.save();
+        ctx.globalAlpha = 0.20;
+        ctx.fillStyle = "rgba(73,181,255,0.35)";
+        ctx.fillRect(x,y,s,s);
+        ctx.restore();
+      }
+
+      // stem + leaves
+      ctx.save();
+      const stemH = Math.floor(s * (0.15 + 0.55*r));
+      const cx = x + s/2;
+      const cy = y + s - 10;
+
+      // stem
+      ctx.strokeStyle = "rgba(182,255,106,0.85)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx, cy - stemH);
+      ctx.stroke();
+
+      // leaves
+      ctx.fillStyle = "rgba(182,255,106,0.55)";
+      const leafW = 8 + r*10;
+      ctx.beginPath();
+      ctx.ellipse(cx - 6, cy - stemH/2, leafW, 6, -0.6, 0, Math.PI*2);
+      ctx.ellipse(cx + 6, cy - stemH/2, leafW, 6, 0.6, 0, Math.PI*2);
+      ctx.fill();
+
+      // fruit/bulb depending on crop
+      const bob = Math.sin((now*2.2) + (x*0.1+y*0.2)) * (ripe ? 1.2 : 0.6);
+
+      if (t.cropKey === 'turnip'){
+        // bulb
+        const rad = 6 + r*10;
+        ctx.fillStyle = ripe ? "rgba(255,207,106,0.9)" : "rgba(234,240,255,0.55)";
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - 6 + bob, rad, rad*0.9, 0, 0, Math.PI*2);
+        ctx.fill();
+      } else if (t.cropKey === 'carrot'){
+        // carrot root
+        const rootH = 10 + r*18;
+        ctx.fillStyle = ripe ? "rgba(255,207,106,0.95)" : "rgba(255,207,106,0.55)";
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 3 + bob);
+        ctx.lineTo(cx - 6 - r*4, cy - 3 - rootH + bob);
+        ctx.lineTo(cx + 6 + r*4, cy - 3 - rootH + bob);
+        ctx.closePath();
+        ctx.fill();
+      } else if (t.cropKey === 'tomato'){
+        // tomato cluster
+        const rad = 5 + r*8;
+        const col = ripe ? "rgba(255,106,138,0.95)" : "rgba(255,106,138,0.55)";
+        ctx.fillStyle = col;
+        for (let i=0;i<3;i++){
+          const ox = (i-1)*10;
+          ctx.beginPath();
+          ctx.ellipse(cx + ox, cy - stemH + 14 + bob, rad, rad, 0, 0, Math.PI*2);
+          ctx.fill();
+        }
+      } else if (t.cropKey === 'corn'){
+        // corn cob
+        const cobH = 12 + r*20;
+        ctx.fillStyle = ripe ? "rgba(255,207,106,0.95)" : "rgba(255,207,106,0.55)";
+        ctx.beginPath();
+        ctx.roundRect(cx - 6, cy - stemH + 10 + bob, 12, cobH, 6);
+        ctx.fill();
+        // kernels lines
+        ctx.globalAlpha = 0.35;
+        ctx.strokeStyle = "rgba(0,0,0,0.35)";
+        for (let i=0;i<3;i++){
+          const lx = cx - 3 + i*3;
+          ctx.beginPath();
+          ctx.moveTo(lx, cy - stemH + 14 + bob);
+          ctx.lineTo(lx, cy - stemH + 10 + cobH - 2 + bob);
+          ctx.stroke();
+        }
+      }
+
+      // ripe sparkle
+      if (ripe){
+        ctx.globalAlpha = 0.55;
+        ctx.fillStyle = "rgba(106,228,255,0.65)";
+        for (let i=0;i<3;i++){
+          const sx = x + 10 + Math.random()*(s-20);
+          const sy = y + 10 + Math.random()*(s-20);
+          ctx.fillRect(sx, sy, 2, 2);
+        }
+      }
+
+      ctx.restore();
+
+      // progress bar at top of tile
+      ctx.save();
+      const barW = s - 10;
+      const barH = 6;
+      const bx = x + 5;
+      const by = y + 6;
+      ctx.fillStyle = "rgba(0,0,0,0.25)";
+      ctx.fillRect(bx, by, barW, barH);
+      ctx.fillStyle = ripe ? "rgba(182,255,106,0.75)" : "rgba(106,228,255,0.65)";
+      ctx.fillRect(bx, by, Math.floor(barW * r), barH);
+      ctx.restore();
+    }
+
+    function drawToast(text, alpha, w, h){
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      const pad = 12;
+      ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono','Courier New', monospace";
+      const metrics = ctx.measureText(text);
+      const tw = Math.min(w - 40, metrics.width + pad*2);
+      const th = 34;
+      const x = (w - tw)/2;
+      const y = h - 56;
+
+      // background
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      roundRect(x, y, tw, th, 12, "rgba(0,0,0,0.35)", "rgba(255,255,255,0.10)");
+
+      // text
+      ctx.fillStyle = "rgba(234,240,255,0.92)";
+      ctx.fillText(text, x + pad, y + 21);
+
+      ctx.restore();
+    }
+
+    function drawSeedInfo(w,h){
+      const c = CROPS[seedSelect.value];
+      ctx.save();
+      ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono','Courier New', monospace";
+      ctx.fillStyle = "rgba(234,240,255,0.75)";
+      const text = `Seed: ${c.name} (cost ${c.cost}, grow ${c.grow}s, sell ${c.sell})`;
+      ctx.fillText(text, 18, 18);
+      ctx.restore();
+    }
+
+    function roundRect(x,y,w,h,r,fillStyle,strokeStyle){
+      ctx.save();
+      ctx.beginPath();
+      const rr = Math.min(r, w/2, h/2);
+      ctx.moveTo(x+rr, y);
+      ctx.arcTo(x+w, y, x+w, y+h, rr);
+      ctx.arcTo(x+w, y+h, x, y+h, rr);
+      ctx.arcTo(x, y+h, x, y, rr);
+      ctx.arcTo(x, y, x+w, y, rr);
+      ctx.closePath();
+      if (fillStyle){
+        ctx.fillStyle = fillStyle;
+        ctx.fill();
+      }
+      if (strokeStyle){
+        ctx.strokeStyle = strokeStyle;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // --- Start the loop ---
+    requestAnimationFrame(tick);
+
+    // Default load attempt (nice UX)
+    // Comment out if you don't want auto-load.
+    // loadGame();
+  </script>
+</body>
+</html>
